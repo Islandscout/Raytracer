@@ -1,0 +1,22 @@
+Nov. 10, 2017:
+After a couple of months, I finally went back to working on this monstrosity. Fortunately, I was able to skid a line-
+triangle intersection algorithm from Wikipedia. I'm currently trying to figure out how the maths work.
+
+Nov. 11, 2017:
+Great! I added OBJLoader which is able to load vertices and faces from OBJ files. I also implemented Z coordinate
+testing for hidden geometry removal. After fixing a few issues, I am now able to render simple objects with flat diffuse
+shading. If I'm going continue, I'll need to learn more about vector cross products. I fixed SSAA; there was an issue
+about SSAA not removing hidden geometry. Finally, I was able to implement an experimental reflection and specular
+algorithm as well.
+
+Nov. 12 2017:
+I finally put the FOV variable to work and fixed the aspect ratio. I fixed an issue where rendering multiple models
+would cause the models to become transparent. Additionally, I implemented a simple Z-axis rotation method in the Model
+class. I need to work on fixing the scale and rotation because the origin is at (0, 0, 0) when it should be at
+model.getCoordinate().
+
+Nov. 21 2017:
+I improved the specular shader.
+
+Nov. 29 2017:
+I significantly improved the render time with a new culling algorithm.
