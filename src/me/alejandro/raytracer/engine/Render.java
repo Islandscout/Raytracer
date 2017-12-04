@@ -25,7 +25,7 @@ public class Render {
 	private final static boolean REFLECTIONS = false; //issue: wont reflect a component color if there is no direct light source for the color.
 	private final static int REFLECTION_BOUNCES = 1;
 	
-	private final static boolean PHONG_SPECULARITY = false;
+	private final static boolean PHONG_SPECULARITY = true;
 	
 	//private final static boolean DEPTH_OF_FIELD = false;
 	//private final static int DEPTH_OF_FIELD_SAMPLES = 4;
