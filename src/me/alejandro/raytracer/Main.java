@@ -20,8 +20,8 @@ import javax.swing.*;
 
 public class Main {
 	
-	public final static int WIDTH = 1300;
-	public final static int HEIGHT = 700;
+	public final static int WIDTH = 400;
+	public final static int HEIGHT = 300;
 	public final static int FOV = 90; //horizontal field of view
 	public static double ASPECT_RATIO = HEIGHT / (double) WIDTH;
 	public static double FOV_MULTIPLIER = Math.tan(Math.toRadians(FOV/2));
@@ -73,6 +73,7 @@ public class Main {
 		cone.getMaterial().setReflectiveness(0.3);
 
 		cone.rotateZ(-160);
+
 
         Scene scene = new Scene();
 		scene.models.add(plane);

@@ -203,7 +203,6 @@ public class Render {
 
 	//skidded from Moller Trumbore's ray-triangle-intersection algorithm
 	private Coordinate rayIntersectsTriangle(Vector rayOrigin, Vector rayVector, Triangle inTriangle) {
-	    Vector rayOrig = new Vector(rayOrigin);
 	    Vector rayVect = new Vector(rayVector);
 		double EPSILON = 0.0000001;
 		Vector vertex0 = inTriangle.getCoord0().toVector();
@@ -217,7 +216,7 @@ public class Render {
 		a = edge1.dotProduct(h);
 		if (a > -EPSILON && a < EPSILON) return null;
 		f = 1/a;
-		s = new Vector(rayOrig.getX() - vertex0.getX(), rayOrig.getY() - vertex0.getY(), rayOrig.getZ() - vertex0.getZ());
+		s = new Vector(rayOrigin.getX() - vertex0.getX(), rayOrigin.getY() - vertex0.getY(), rayOrigin.getZ() - vertex0.getZ());
 		u = f * (s.dotProduct(h));
 		if (u < 0.0 || u > 1.0) return null;
 		q = s.crossProduct(edge1);
@@ -227,9 +226,8 @@ public class Render {
 		double t = f * edge2.dotProduct(q);
 		if (t > EPSILON) { //ray intersection
 			rayVect.multiply(t);
-			rayOrig.add(rayVect);
 			//testColor = new Color((int) (255*u), (int) (255*v), (int) (255*(1-u-v)));
-			return new Coordinate(rayOrig.getX(), rayOrig.getY(), rayOrig.getZ());
+			return new Coordinate(rayVect.getX(), rayVect.getY(), rayVect.getZ());
 		}
 		else return null; // This means that there is a line intersection but not a ray intersection.
 	}
