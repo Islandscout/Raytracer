@@ -18,7 +18,7 @@ public class Render {
 	//private final static int MAX_BOUNCES = 4;
 	//private final static int INDIRECT_SAMPLES = 20;
 	
-	private final static boolean SHADOWS = false;
+	private final static boolean SHADOWS = true;
 	//private final static int SOFT_SHADOW_SAMPLES = 1;
 	
 	private final static boolean REFLECTIONS = false; //issue: wont reflect a component color if there is no direct light source for the color.
@@ -61,7 +61,7 @@ public class Render {
 			double intersectDistance = Double.MAX_VALUE;
 			for(Model loopModel : scene.models) {
 
-                //ignore objects with a bounding box that is not intersected by camera ray. This saves a LOT of render time.
+				//ignore objects with a bounding box that is not intersected by camera ray. This saves a LOT of render time.
 				if(!cameraRayInBoundsOfModel(ray, loopModel)) {
 					//red += 50; //debugging
 					continue;
@@ -101,20 +101,29 @@ public class Render {
 				//calculate direct lighting
 				Vector camera = new Vector(0 - intersectFirst.getX(), 0 - intersectFirst.getY(), 0 - intersectFirst.getZ());
 				camera.normalize();
-				boolean lightRayHitSomething = false;
+				boolean lightRayHitSomething;
 				for(Lamp loopLamp : scene.lamps) {
+					lightRayHitSomething = false;
 					Vector lampVectorNotNormalized = new Vector(loopLamp.getCoordinate().getX() - intersectFirst.getX(), loopLamp.getCoordinate().getY() - intersectFirst.getY(), loopLamp.getCoordinate().getZ() - intersectFirst.getZ());
 					Vector lampVector = new Vector(lampVectorNotNormalized);
 					lampVector.normalize();
 
 					//test for shadows
+
+					/* Terminator Problem:
+					 * It doesn't seem like many people have developed ways to fix shadows with smooth shaded objects, yet. I'll have to figure this out myself.
+					 * I can tell there is a lot of math involved.
+					 * Blender has this issue too, even with the Cycles rendering engine selected.
+					 * 3Delight is said to have this issue too, as well as V-ray and Renderman. Yikes.
+					 */
 					if(SHADOWS) {
 						//for(int i1 = 0; i1 < SOFT_SHADOW_SAMPLES; i1++) {
 							for(Model loopModel : scene.models) {
 								for(Triangle loopTriangle : loopModel.triangles) {
 									Coordinate intersectLightPath = rayIntersectsTriangle(intersectFirst.toVector(), lampVectorNotNormalized, loopTriangle);
-									if(intersectLightPath != null && intersectFirst.distanceSquared(intersectLightPath) <= intersectFirst.distanceSquared(loopLamp.getCoordinate())) {
+									if(intersectLightPath != null && intersectFirst.distanceSquared(loopLamp.getCoordinate()) > intersectLightPath.distanceSquared(loopLamp.getCoordinate())) {
 										lightRayHitSomething = true;
+										//red = 255;
 										break;
 									}
 								}

@@ -90,8 +90,10 @@ public class Main {
 		//scene.models.add(cone);
 		scene.models.add(teapot);
 
-		Lamp lamp = new Lamp(new Coordinate(2, -0.8, 0), 3D, new Color(255, 255, 200), LampType.POINT);
-		scene.lamps.add(lamp);
+		Lamp lamp = new Lamp(new Coordinate(0.5, 0, 0), 0.5D, new Color(255, 255, 200), LampType.POINT);
+		Lamp lamp1 = new Lamp(new Coordinate(-2, -0.8, 0), 5D, new Color(255, 255, 0), LampType.POINT);
+		//scene.lamps.add(lamp);
+		scene.lamps.add(lamp1);
 
 		Render render = new Render(scene);
 		long timeElapsed = System.currentTimeMillis();
