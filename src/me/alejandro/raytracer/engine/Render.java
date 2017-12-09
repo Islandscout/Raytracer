@@ -1,7 +1,6 @@
 package me.alejandro.raytracer.engine;
 
 import java.awt.Color;
-import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 import me.alejandro.raytracer.Main;
@@ -35,16 +34,17 @@ public class Render {
 	
 	private final static Color BACKGROUND_COLOR = new Color(50, 50, 50);
 
-	private Color testColor;
+	private Coordinate currentBarycentric = new Coordinate(0, 0, 0);
 	private Vector cameraPosition = new Vector(0, 0, 0); //DO NOT TOUCH
 	private Scene scene;
+    private ThreadLocalRandom random = ThreadLocalRandom.current();
 	
 	public Render(Scene scene) {
 		this.scene = scene;
 	}
 
 	public Color getColor(double x, double y) {
-		ThreadLocalRandom random = ThreadLocalRandom.current();
+
 		Vector ray = new Vector(x, y, 1); //make a ray that shoots from the camera
 		int red = 0;
 		int green = 0;
@@ -54,6 +54,7 @@ public class Render {
 			if(SSAA != 0) ray = new Vector(x + random.nextDouble() / (Main.WIDTH / 2), y + random.nextDouble() / (Main.HEIGHT / 2), 1);
 			Triangle triangle = null;
 			Coordinate intersectFirst = null;
+			Coordinate barycentric = null;
 			Model model = null;
 
 			//choose closest triangle in pixel
@@ -74,6 +75,7 @@ public class Render {
 							triangle = loopTriangle; //the closest triangle is now chosen
 							intersectFirst = loopIntersect; //this is where the ray intersects with the triangle
 							model = loopModel; //the model of the closest triangle is now chosen
+							barycentric = new Coordinate(currentBarycentric); //barycentric coordinates of triangle used for smooth phong shading
 						}
 					}
 				}
@@ -81,6 +83,20 @@ public class Render {
 
 			//if something was found, then...
 			if(triangle != null) {
+
+				//jeez...
+				//interpolate normal vector based on intersection point on triangle for smooth shading
+				Vector vertexNormal0 = new Vector(triangle.getNormal0());
+				vertexNormal0.multiply(barycentric.getZ());
+				Vector vertexNormal1 = new Vector(triangle.getNormal1());
+				vertexNormal1.multiply(barycentric.getX());
+				Vector vertexNormal2 = new Vector(triangle.getNormal2());
+				vertexNormal2.multiply(barycentric.getY());
+				Vector interpolatedNormal = vertexNormal0;
+				interpolatedNormal.add(vertexNormal1);
+				interpolatedNormal.add(vertexNormal2);
+
+				interpolatedNormal.normalize();
 
 				//calculate direct lighting
 				Vector camera = new Vector(0 - intersectFirst.getX(), 0 - intersectFirst.getY(), 0 - intersectFirst.getZ());
@@ -107,25 +123,23 @@ public class Render {
 						//}
 					}
 					if(!lightRayHitSomething && DIFFUSE) { //if there isn't something in the way of the light, then...
-						double lightIntensity = Math.cos(triangle.getNormal().angleRadians(lampVectorNotNormalized));
+
+						double lightIntensity = Math.cos(interpolatedNormal.angleRadians(lampVectorNotNormalized));
 						double lightDistance = lampVectorNotNormalized.length() + 1;
 						red += (int) ((lightIntensity * (loopLamp.getColor().getRed() * model.getMaterial().getColor().getRed() / 255) * loopLamp.getIntensity()) / lightDistance);
 						green += (int) ((lightIntensity * (loopLamp.getColor().getGreen() * model.getMaterial().getColor().getGreen() / 255) * loopLamp.getIntensity()) / lightDistance);
 						blue += (int) ((lightIntensity * (loopLamp.getColor().getBlue() * model.getMaterial().getColor().getBlue() / 255) * loopLamp.getIntensity()) / lightDistance);
-						//red = testColor.getRed();
-						//green = testColor.getGreen();
-						//blue = testColor.getBlue();
 					}
 
 					//calculate specularity
 					if (PHONG_SPECULARITY && !lightRayHitSomething) {
-						Vector specular = new Vector(triangle.getNormal());
+						Vector specular = new Vector(interpolatedNormal);
 
 						specular.add(lampVector);
-						specular.add(triangle.getNormal());
+						specular.add(interpolatedNormal);
 
 						specular.normalize();
-						specular.multiply(2 * camera.dotProduct(triangle.getNormal()));
+						specular.multiply(2 * camera.dotProduct(interpolatedNormal));
 						specular.subtract(camera);
 						double specular_amount = Math.cos(specular.angleRadians(lampVectorNotNormalized));
 
@@ -141,8 +155,8 @@ public class Render {
 				if(REFLECTIONS && model.getMaterial().getReflectiveness() > 0) {
 					Coordinate currentBounce = intersectFirst.clone();
 					for (int i1 = 0; i1 < REFLECTION_BOUNCES; i1++) {
-						Vector reflection = triangle.getNormal().clone();
-						reflection.multiply(2 * camera.dotProduct(triangle.getNormal()));
+						Vector reflection = interpolatedNormal.clone();
+						reflection.multiply(2 * camera.dotProduct(interpolatedNormal));
 						reflection.subtract(camera);
 						double triangleDistance = Double.MAX_VALUE;
 						Triangle chosenTriangle = null;
@@ -226,7 +240,9 @@ public class Render {
 		double t = f * edge2.dotProduct(q);
 		if (t > EPSILON) { //ray intersection
 			rayVect.multiply(t);
-			//testColor = new Color((int) (255*u), (int) (255*v), (int) (255*(1-u-v)));
+			currentBarycentric.setX(u);
+			currentBarycentric.setY(v);
+			currentBarycentric.setZ(1-u-v);
 			return new Coordinate(rayVect.getX(), rayVect.getY(), rayVect.getZ());
 		}
 		else return null; // This means that there is a line intersection but not a ray intersection.

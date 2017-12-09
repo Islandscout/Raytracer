@@ -12,6 +12,12 @@ public class Coordinate implements Cloneable {
 		this.z = z;
 	}
 
+	public Coordinate(Coordinate coordinate) {
+		this.x = coordinate.getX();
+		this.y = coordinate.getY();
+		this.z = coordinate.getZ();
+	}
+
 	public double getX() {
 		return x;
 	}

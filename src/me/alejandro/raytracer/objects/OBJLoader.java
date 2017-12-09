@@ -51,7 +51,8 @@ public class OBJLoader implements Cloneable {
                     face_verticies[i - 1] = Integer.parseInt(moreParts[0]) - 1;
                     face_normals[i - 1] = Integer.parseInt(moreParts[2]) - 1;
                 }
-                triangles.add(new Triangle(verticies.get(face_verticies[0]), verticies.get(face_verticies[1]), verticies.get(face_verticies[2]), normals.get(face_normals[0])));
+                triangles.add(new Triangle(verticies.get(face_verticies[0]), verticies.get(face_verticies[1]), verticies.get(face_verticies[2]), normals.get(face_normals[0]), normals.get(face_normals[1]), normals.get(face_normals[2])));
+                //triangles.add(new Triangle(verticies.get(face_verticies[0]), verticies.get(face_verticies[1]), verticies.get(face_verticies[2]), normals.get(face_normals[0])));
             }
             line = reader.readLine();
         }

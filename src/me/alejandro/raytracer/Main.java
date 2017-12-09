@@ -20,8 +20,8 @@ import javax.swing.*;
 
 public class Main {
 	
-	public final static int WIDTH = 400;
-	public final static int HEIGHT = 300;
+	public final static int WIDTH = 900;
+	public final static int HEIGHT = 600;
 	public final static int FOV = 90; //horizontal field of view
 	public static double ASPECT_RATIO = HEIGHT / (double) WIDTH;
 	public static double FOV_MULTIPLIER = Math.tan(Math.toRadians(FOV/2));
@@ -43,6 +43,8 @@ public class Main {
 		OBJLoader loaderSphere = new OBJLoader("sphere.obj");
 		OBJLoader loaderCube = new OBJLoader("cube.obj");
 		OBJLoader loaderCone = new OBJLoader("cone.obj");
+		OBJLoader loaderTeapot = new OBJLoader("teapot.obj");
+		loaderTeapot.loadModel();
 		loaderPlane.loadModel();
 		loaderSphere.loadModel();
 		loaderCube.loadModel();
@@ -51,6 +53,7 @@ public class Main {
 		Model sphere = loaderSphere.getModel().clone();
 		Model cube = loaderCube.getModel().clone();
 		Model cone = loaderCone.getModel().clone();
+		Model teapot = loaderTeapot.getModel().clone();
 
 		plane.translate(new Vector(-1.5, -1, 5));
 		plane.getMaterial().setColor(Color.WHITE);
@@ -72,16 +75,22 @@ public class Main {
 		cone.getMaterial().setSpecularColor(new Color(50, 255, 50));
 		cone.getMaterial().setReflectiveness(0.3);
 
+		teapot.translate(new Vector(0, -0.5, 2));
+		teapot.getMaterial().setColor(Color.WHITE);
+		teapot.getMaterial().setSpecularHardness(200);
+		teapot.getMaterial().setSpecularColor(Color.WHITE);
+
 		cone.rotateZ(-160);
 
 
         Scene scene = new Scene();
-		scene.models.add(plane);
-		scene.models.add(sphere);
-		scene.models.add(cube);
-		scene.models.add(cone);
+		//scene.models.add(plane);
+		//scene.models.add(sphere);
+		//scene.models.add(cube);
+		//scene.models.add(cone);
+		scene.models.add(teapot);
 
-		Lamp lamp = new Lamp(new Coordinate(2, -0.8, 4), 3D, new Color(255, 255, 200), LampType.POINT);
+		Lamp lamp = new Lamp(new Coordinate(2, -0.8, 0), 3D, new Color(255, 255, 200), LampType.POINT);
 		scene.lamps.add(lamp);
 
 		Render render = new Render(scene);

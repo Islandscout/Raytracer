@@ -134,8 +134,9 @@ public class Model implements Cloneable {
 			y_prime = triangle.getCoord2().getX() * Math.sin(Math.toRadians(degrees)) + triangle.getCoord2().getY() * Math.cos(Math.toRadians(degrees));
 			triangle.setCoord2(new Coordinate(x_prime, y_prime, triangle.getCoord2().getZ()));
 
-			triangle.getNormal().setX(triangle.getNormal().getX() * Math.cos(Math.toRadians(degrees)) - triangle.getNormal().getY() * Math.sin(Math.toRadians(degrees)));
-			triangle.getNormal().setY(triangle.getNormal().getX() * Math.sin(Math.toRadians(degrees)) + triangle.getNormal().getY() * Math.cos(Math.toRadians(degrees)));
+			triangle.getNormal0().setX(triangle.getNormal0().getX() * Math.cos(Math.toRadians(degrees)) - triangle.getNormal0().getY() * Math.sin(Math.toRadians(degrees)));
+			triangle.getNormal0().setY(triangle.getNormal0().getX() * Math.sin(Math.toRadians(degrees)) + triangle.getNormal0().getY() * Math.cos(Math.toRadians(degrees)));
+			//TODO: remember to rotate the other vertecies in the triangle
 
 			calculateAABB();
 		}

@@ -20,3 +20,7 @@ I improved the specular shader.
 
 Nov. 29 2017:
 I significantly improved the render time with a new culling algorithm.
+
+Dec. 8 2017:
+15% performance increase! That is until I added the algorithm for smooth shading. I removed lots of cloning and
+redundant code.
