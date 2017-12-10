@@ -70,29 +70,30 @@ public class Main {
 		cube.getMaterial().setSpecularColor(Color.WHITE);
 		cube.getMaterial().setReflectiveness(0.3);
 
-		cone.translate(new Vector(-1.5, -1, 5));
+		cone.translate(new Vector(-1.5, -1, 6));
 		cone.getMaterial().setColor(new Color(50, 255, 50));
 		cone.getMaterial().setSpecularColor(new Color(50, 255, 50));
 		cone.getMaterial().setReflectiveness(0.3);
 
-		teapot.translate(new Vector(0, -0.5, 2));
+		//teapot.translate(new Vector(-1.5, -1, 5));
+		teapot.translate(new Vector(0, -1, 2.3));
 		teapot.getMaterial().setColor(Color.WHITE);
 		teapot.getMaterial().setSpecularHardness(200);
 		teapot.getMaterial().setSpecularColor(Color.WHITE);
 
-		cone.rotateZ(-160);
+		//cone.rotateZ(-160);
 
 
         Scene scene = new Scene();
-		//scene.models.add(plane);
-		//scene.models.add(sphere);
-		//scene.models.add(cube);
-		//scene.models.add(cone);
+		scene.models.add(plane);
+		scene.models.add(sphere);
+		scene.models.add(cube);
+		scene.models.add(cone);
 		scene.models.add(teapot);
 
-		Lamp lamp = new Lamp(new Coordinate(0.5, 0, 0), 0.5D, new Color(255, 255, 200), LampType.POINT);
-		Lamp lamp1 = new Lamp(new Coordinate(-2, -0.8, 0), 5D, new Color(255, 255, 0), LampType.POINT);
-		//scene.lamps.add(lamp);
+		Lamp lamp = new Lamp(new Coordinate(3, 0, 4), 2D, new Color(255, 255, 200), LampType.POINT);
+		Lamp lamp1 = new Lamp(new Coordinate(-3, 0, 0), 2D, new Color(255, 255, 0), LampType.POINT);
+		scene.lamps.add(lamp);
 		scene.lamps.add(lamp1);
 
 		Render render = new Render(scene);

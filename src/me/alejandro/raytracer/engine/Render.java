@@ -19,6 +19,7 @@ public class Render {
 	//private final static int INDIRECT_SAMPLES = 20;
 	
 	private final static boolean SHADOWS = true;
+	private final static boolean SHADOW_FIX = true; //fixes shadow termination artifact on smooth surfaces. May cause issues on non-closed geometry.
 	//private final static int SOFT_SHADOW_SAMPLES = 1;
 	
 	private final static boolean REFLECTIONS = false; //issue: wont reflect a component color if there is no direct light source for the color.
@@ -109,22 +110,26 @@ public class Render {
 					lampVector.normalize();
 
 					//test for shadows
-
-					/* Terminator Problem:
-					 * It doesn't seem like many people have developed ways to fix shadows with smooth shaded objects, yet. I'll have to figure this out myself.
-					 * I can tell there is a lot of math involved.
-					 * Blender has this issue too, even with the Cycles rendering engine selected.
-					 * 3Delight is said to have this issue too, as well as V-ray and Renderman. Yikes.
-					 */
 					if(SHADOWS) {
 						//for(int i1 = 0; i1 < SOFT_SHADOW_SAMPLES; i1++) {
 							for(Model loopModel : scene.models) {
 								for(Triangle loopTriangle : loopModel.triangles) {
 									Coordinate intersectLightPath = rayIntersectsTriangle(intersectFirst.toVector(), lampVectorNotNormalized, loopTriangle);
 									if(intersectLightPath != null && intersectFirst.distanceSquared(loopLamp.getCoordinate()) > intersectLightPath.distanceSquared(loopLamp.getCoordinate())) {
-										lightRayHitSomething = true;
-										//red = 255;
-										break;
+										if(SHADOW_FIX){
+											if(model == loopModel && lampVector.angleRadians(loopTriangle.getNormal()) >= 1.5708) {
+												lightRayHitSomething = true;
+												break;
+											}
+											else if (model != loopModel) {
+												lightRayHitSomething = true;
+												break;
+											}
+										}
+										else {
+											lightRayHitSomething = true;
+											break;
+										}
 									}
 								}
 								if(lightRayHitSomething) break;
@@ -132,8 +137,8 @@ public class Render {
 						//}
 					}
 					if(!lightRayHitSomething && DIFFUSE) { //if there isn't something in the way of the light, then...
-
 						double lightIntensity = Math.cos(interpolatedNormal.angleRadians(lampVectorNotNormalized));
+						if(lightIntensity < 0) continue;
 						double lightDistance = lampVectorNotNormalized.length() + 1;
 						red += (int) ((lightIntensity * (loopLamp.getColor().getRed() * model.getMaterial().getColor().getRed() / 255) * loopLamp.getIntensity()) / lightDistance);
 						green += (int) ((lightIntensity * (loopLamp.getColor().getGreen() * model.getMaterial().getColor().getGreen() / 255) * loopLamp.getIntensity()) / lightDistance);
@@ -252,7 +257,7 @@ public class Render {
 			currentBarycentric.setX(u);
 			currentBarycentric.setY(v);
 			currentBarycentric.setZ(1-u-v);
-			return new Coordinate(rayVect.getX(), rayVect.getY(), rayVect.getZ());
+			return new Coordinate(rayOrigin.getX() + rayVect.getX(), rayOrigin.getY() + rayVect.getY(), rayOrigin.getZ() + rayVect.getZ());
 		}
 		else return null; // This means that there is a line intersection but not a ray intersection.
 	}
