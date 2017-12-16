@@ -75,8 +75,8 @@ public class Main {
 		cone.getMaterial().setSpecularColor(new Color(50, 255, 50));
 		cone.getMaterial().setReflectiveness(0.3);
 
-		//teapot.translate(new Vector(-1.5, -1, 5));
-		teapot.translate(new Vector(0, -1, 2.3));
+		teapot.translate(new Vector(-1.5, -1, 5));
+		//teapot.translate(new Vector(0, 0, 2.3));
 		teapot.getMaterial().setColor(Color.WHITE);
 		teapot.getMaterial().setSpecularHardness(200);
 		teapot.getMaterial().setSpecularColor(Color.WHITE);
@@ -85,14 +85,14 @@ public class Main {
 
 
         Scene scene = new Scene();
-		scene.models.add(plane);
+        scene.models.add(plane);
 		scene.models.add(sphere);
 		scene.models.add(cube);
 		scene.models.add(cone);
 		scene.models.add(teapot);
 
-		Lamp lamp = new Lamp(new Coordinate(3, 0, 4), 2D, new Color(255, 255, 200), LampType.POINT);
-		Lamp lamp1 = new Lamp(new Coordinate(-3, 0, 0), 2D, new Color(255, 255, 0), LampType.POINT);
+		Lamp lamp = new Lamp(new Coordinate(3, 0, 1.2), 10D, new Color(255, 255, 200), LampType.POINT);
+		Lamp lamp1 = new Lamp(new Coordinate(-3, 0, 0), 7D, new Color(255, 255, 0), LampType.POINT);
 		scene.lamps.add(lamp);
 		scene.lamps.add(lamp1);
 

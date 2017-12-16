@@ -139,7 +139,7 @@ public class Render {
 					if(!lightRayHitSomething && DIFFUSE) { //if there isn't something in the way of the light, then...
 						double lightIntensity = Math.cos(interpolatedNormal.angleRadians(lampVectorNotNormalized));
 						if(lightIntensity < 0) continue;
-						double lightDistance = lampVectorNotNormalized.length() + 1;
+						double lightDistance = Math.pow(lampVectorNotNormalized.length(), 2) + 1; //power of 2 because we must follow inverse square law
 						red += (int) ((lightIntensity * (loopLamp.getColor().getRed() * model.getMaterial().getColor().getRed() / 255) * loopLamp.getIntensity()) / lightDistance);
 						green += (int) ((lightIntensity * (loopLamp.getColor().getGreen() * model.getMaterial().getColor().getGreen() / 255) * loopLamp.getIntensity()) / lightDistance);
 						blue += (int) ((lightIntensity * (loopLamp.getColor().getBlue() * model.getMaterial().getColor().getBlue() / 255) * loopLamp.getIntensity()) / lightDistance);
@@ -158,7 +158,7 @@ public class Render {
 						double specular_amount = Math.cos(specular.angleRadians(lampVectorNotNormalized));
 
 						if(specular_amount < 0) specular_amount = 0;
-						specular_amount = (Math.pow(specular_amount, model.getMaterial().getSpecularHardness()) / (lampVectorNotNormalized.length() + 1)) * model.getMaterial().getSpecularIntensity(); //hardness and intensity
+						specular_amount = (Math.pow(specular_amount, model.getMaterial().getSpecularHardness()) / (Math.pow(lampVectorNotNormalized.length(), 2) + 1)) * model.getMaterial().getSpecularIntensity(); //hardness and intensity
 						red += (int) (specular_amount * (loopLamp.getColor().getRed() * model.getMaterial().getSpecularColor().getRed() / 255) * loopLamp.getIntensity());
 						green += (int) (specular_amount * (loopLamp.getColor().getGreen() * model.getMaterial().getSpecularColor().getGreen() / 255) * loopLamp.getIntensity());
 						blue += (int) (specular_amount * (loopLamp.getColor().getBlue() * model.getMaterial().getSpecularColor().getBlue() / 255) * loopLamp.getIntensity());
