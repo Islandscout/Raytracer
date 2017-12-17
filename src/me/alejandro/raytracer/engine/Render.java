@@ -7,6 +7,7 @@ import me.alejandro.raytracer.Main;
 import me.alejandro.raytracer.entities.Lamp;
 import me.alejandro.raytracer.entities.Model;
 import me.alejandro.raytracer.objects.Coordinate;
+import me.alejandro.raytracer.objects.Material;
 import me.alejandro.raytracer.objects.Triangle;
 import me.alejandro.raytracer.objects.Vector;
 
@@ -15,8 +16,8 @@ public class Render {
 	private final static int SSAA = 0; //recommended to disable. This increases render time by A LOT when enabled.
 	
 	private final static boolean DIFFUSE = true;
-	//private final static int MAX_BOUNCES = 4;
-	//private final static int INDIRECT_SAMPLES = 20;
+
+	private final static int INDIRECT_SAMPLES = 100;
 	
 	private final static boolean SHADOWS = true;
 	private final static boolean SHADOW_FIX = true; //fixes shadow termination artifact on smooth surfaces. May cause issues on non-closed geometry.
@@ -162,6 +163,40 @@ public class Render {
 						red += (int) (specular_amount * (loopLamp.getColor().getRed() * model.getMaterial().getSpecularColor().getRed() / 255) * loopLamp.getIntensity());
 						green += (int) (specular_amount * (loopLamp.getColor().getGreen() * model.getMaterial().getSpecularColor().getGreen() / 255) * loopLamp.getIntensity());
 						blue += (int) (specular_amount * (loopLamp.getColor().getBlue() * model.getMaterial().getSpecularColor().getBlue() / 255) * loopLamp.getIntensity());
+					}
+				}
+
+				for(int indirectSample = 0; indirectSample < INDIRECT_SAMPLES; indirectSample ++) {
+					Vector indirectVector = new Vector(interpolatedNormal);
+					Vector randomVector = new Vector((random.nextDouble() - 0.5)*2, (random.nextDouble() - 0.5)*2, (random.nextDouble() - 0.5)*2);
+					randomVector.normalize();
+					indirectVector.add(randomVector);
+					Coordinate currentIndirectBounce = null;
+					double distanceSquared = Double.MAX_VALUE;
+					Triangle indirectTriangle = null;
+					Model indirectModel = null;
+					for(Model loopModel : scene.models) {
+						for(Triangle loopTriangle : loopModel.triangles) {
+							Coordinate intersectRayPath = rayIntersectsTriangle(intersectFirst.toVector(), indirectVector, loopTriangle);
+							if(intersectRayPath != null && intersectFirst.distanceSquared(intersectRayPath) < distanceSquared) {
+								distanceSquared = intersectFirst.distanceSquared(intersectRayPath);
+								indirectTriangle = loopTriangle;
+								currentIndirectBounce = intersectRayPath;
+								indirectModel = loopModel;
+							}
+						}
+					}
+					if(currentIndirectBounce == null) continue;
+					for(Lamp indirectLoopLamp : scene.lamps) {
+						Vector indirectLampVectorNotNormalized = new Vector(indirectLoopLamp.getCoordinate().getX() - currentIndirectBounce.getX(), indirectLoopLamp.getCoordinate().getY() - currentIndirectBounce.getY(), indirectLoopLamp.getCoordinate().getZ() - currentIndirectBounce.getZ());
+						Vector indirectLampVector = new Vector(indirectLampVectorNotNormalized);
+						indirectLampVector.normalize();
+						double lightIntensity = Math.cos(indirectTriangle.getNormal().angleRadians(indirectLampVectorNotNormalized));
+						if(lightIntensity < 0) continue;
+						double lightDistance = Math.pow(indirectLampVectorNotNormalized.length(), 2) + 1; //power of 2 because we must follow inverse square law
+						red += (int) (((lightIntensity * (indirectLoopLamp.getColor().getRed() * indirectModel.getMaterial().getColor().getRed() * model.getMaterial().getColor().getRed() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
+						green += (int) (((lightIntensity * (indirectLoopLamp.getColor().getGreen() * indirectModel.getMaterial().getColor().getGreen() * model.getMaterial().getColor().getGreen() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
+						blue += (int) (((lightIntensity * (indirectLoopLamp.getColor().getBlue() * indirectModel.getMaterial().getColor().getBlue() * model.getMaterial().getColor().getBlue() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
 					}
 				}
 

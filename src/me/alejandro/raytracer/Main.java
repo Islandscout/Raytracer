@@ -20,8 +20,8 @@ import javax.swing.*;
 
 public class Main {
 	
-	public final static int WIDTH = 900;
-	public final static int HEIGHT = 600;
+	public final static int WIDTH = 300;
+	public final static int HEIGHT = 300;
 	public final static int FOV = 90; //horizontal field of view
 	public static double ASPECT_RATIO = HEIGHT / (double) WIDTH;
 	public static double FOV_MULTIPLIER = Math.tan(Math.toRadians(FOV/2));
@@ -91,7 +91,7 @@ public class Main {
 		scene.models.add(cone);
 		scene.models.add(teapot);
 
-		Lamp lamp = new Lamp(new Coordinate(3, 0, 1.2), 10D, new Color(255, 255, 200), LampType.POINT);
+		Lamp lamp = new Lamp(new Coordinate(3, 0, 3.2), 10D, new Color(255, 255, 200), LampType.POINT);
 		Lamp lamp1 = new Lamp(new Coordinate(-3, 0, 0), 7D, new Color(255, 255, 0), LampType.POINT);
 		scene.lamps.add(lamp);
 		scene.lamps.add(lamp1);

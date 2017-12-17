@@ -27,3 +27,6 @@ redundant code.
 
 Dec. 10 2017:
 I managed to fix the notorious shadow termination problem.
+
+Dec. 16 2017:
+Added a really slow indirect lighting algorithm.
