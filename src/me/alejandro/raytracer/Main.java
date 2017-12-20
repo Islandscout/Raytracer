@@ -13,19 +13,20 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.net.URL;
+import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class Main {
 	
-	public final static int WIDTH = 300;
-	public final static int HEIGHT = 300;
+	public final static int WIDTH = 900;
+	public final static int HEIGHT = 600;
 	public final static int FOV = 90; //horizontal field of view
 	public static double ASPECT_RATIO = HEIGHT / (double) WIDTH;
 	public static double FOV_MULTIPLIER = Math.tan(Math.toRadians(FOV/2));
 	private static BufferedImage buffer = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+	public static BufferedImage texture;
 	
 	/*
 	   A simple raytracer in Java. A dream come true after 2 years.
@@ -34,12 +35,19 @@ public class Main {
 	
 	public static void main(String[] args) {
 
+		try {
+			texture = ImageIO.read(new File("tex.jpg"));
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+
 		final JFrame frame = new JFrame("Render");
 		final JLabel lbl = new JLabel();
 
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-		OBJLoader loaderPlane = new OBJLoader("plane.obj");
+		OBJLoader loaderPlane = new OBJLoader("testPlane.obj");
 		OBJLoader loaderSphere = new OBJLoader("sphere.obj");
 		OBJLoader loaderCube = new OBJLoader("cube.obj");
 		OBJLoader loaderCone = new OBJLoader("cone.obj");
@@ -55,7 +63,8 @@ public class Main {
 		Model cone = loaderCone.getModel().clone();
 		Model teapot = loaderTeapot.getModel().clone();
 
-		plane.translate(new Vector(-1.5, -1, 5));
+		//plane.translate(new Vector(-1.5, -1, 5));
+		plane.translate(new Vector(0, 0, 15));
 		plane.getMaterial().setColor(Color.WHITE);
 		plane.getMaterial().setSpecularColor(Color.WHITE);
 		plane.getMaterial().setReflectiveness(0.3);
@@ -86,10 +95,10 @@ public class Main {
 
         Scene scene = new Scene();
         scene.models.add(plane);
-		scene.models.add(sphere);
-		scene.models.add(cube);
-		scene.models.add(cone);
-		scene.models.add(teapot);
+		//scene.models.add(sphere);
+		//scene.models.add(cube);
+		//scene.models.add(cone);
+		//scene.models.add(teapot);
 
 		Lamp lamp = new Lamp(new Coordinate(3, 0, 3.2), 10D, new Color(255, 255, 200), LampType.POINT);
 		Lamp lamp1 = new Lamp(new Coordinate(-3, 0, 0), 7D, new Color(255, 255, 0), LampType.POINT);

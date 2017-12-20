@@ -7,7 +7,6 @@ import me.alejandro.raytracer.Main;
 import me.alejandro.raytracer.entities.Lamp;
 import me.alejandro.raytracer.entities.Model;
 import me.alejandro.raytracer.objects.Coordinate;
-import me.alejandro.raytracer.objects.Material;
 import me.alejandro.raytracer.objects.Triangle;
 import me.alejandro.raytracer.objects.Vector;
 
@@ -15,18 +14,18 @@ public class Render {
 
 	private final static int SSAA = 0; //recommended to disable. This increases render time by A LOT when enabled.
 	
-	private final static boolean DIFFUSE = true;
+	private final static boolean DIFFUSE = true; //lambert diffuse
 
-	private final static int INDIRECT_SAMPLES = 100;
+	private final static int INDIRECT_SAMPLES = 0;
 	
-	private final static boolean SHADOWS = true;
-	private final static boolean SHADOW_FIX = true; //fixes shadow termination artifact on smooth surfaces. May cause issues on non-closed geometry.
+	private final static boolean SHADOWS = false;
+	private final static boolean SHADOW_FIX = false; //fixes shadow termination artifact on smooth surfaces. May cause issues on non-closed geometry.
 	//private final static int SOFT_SHADOW_SAMPLES = 1;
 	
 	private final static boolean REFLECTIONS = false; //issue: wont reflect a component color if there is no direct light source for the color.
 	private final static int REFLECTION_BOUNCES = 1;
 	
-	private final static boolean PHONG_SPECULARITY = true;
+	private final static boolean PHONG_SPECULARITY = false;
 	
 	//private final static boolean DEPTH_OF_FIELD = false;
 	//private final static int DEPTH_OF_FIELD_SAMPLES = 4;
@@ -166,6 +165,11 @@ public class Render {
 					}
 				}
 
+				//calculate indirect lighting (very very slow)
+				//1 bounce & shadows on the indirect object do not affect bounced ray
+				double redIndirect = 0;
+				double greenIndirect = 0;
+				double blueIndirect = 0;
 				for(int indirectSample = 0; indirectSample < INDIRECT_SAMPLES; indirectSample ++) {
 					Vector indirectVector = new Vector(interpolatedNormal);
 					Vector randomVector = new Vector((random.nextDouble() - 0.5)*2, (random.nextDouble() - 0.5)*2, (random.nextDouble() - 0.5)*2);
@@ -186,7 +190,12 @@ public class Render {
 							}
 						}
 					}
-					if(currentIndirectBounce == null) continue;
+					if(currentIndirectBounce == null) {
+						redIndirect += (BACKGROUND_COLOR.getRed() / (double) INDIRECT_SAMPLES);
+						greenIndirect += (BACKGROUND_COLOR.getGreen() / (double) INDIRECT_SAMPLES);
+						blueIndirect += (BACKGROUND_COLOR.getBlue() / (double) INDIRECT_SAMPLES);
+						continue;
+					}
 					for(Lamp indirectLoopLamp : scene.lamps) {
 						Vector indirectLampVectorNotNormalized = new Vector(indirectLoopLamp.getCoordinate().getX() - currentIndirectBounce.getX(), indirectLoopLamp.getCoordinate().getY() - currentIndirectBounce.getY(), indirectLoopLamp.getCoordinate().getZ() - currentIndirectBounce.getZ());
 						Vector indirectLampVector = new Vector(indirectLampVectorNotNormalized);
@@ -194,11 +203,14 @@ public class Render {
 						double lightIntensity = Math.cos(indirectTriangle.getNormal().angleRadians(indirectLampVectorNotNormalized));
 						if(lightIntensity < 0) continue;
 						double lightDistance = Math.pow(indirectLampVectorNotNormalized.length(), 2) + 1; //power of 2 because we must follow inverse square law
-						red += (int) (((lightIntensity * (indirectLoopLamp.getColor().getRed() * indirectModel.getMaterial().getColor().getRed() * model.getMaterial().getColor().getRed() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
-						green += (int) (((lightIntensity * (indirectLoopLamp.getColor().getGreen() * indirectModel.getMaterial().getColor().getGreen() * model.getMaterial().getColor().getGreen() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
-						blue += (int) (((lightIntensity * (indirectLoopLamp.getColor().getBlue() * indirectModel.getMaterial().getColor().getBlue() * model.getMaterial().getColor().getBlue() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
+						redIndirect += (((lightIntensity * (indirectLoopLamp.getColor().getRed() * indirectModel.getMaterial().getColor().getRed() * model.getMaterial().getColor().getRed() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
+						greenIndirect += (((lightIntensity * (indirectLoopLamp.getColor().getGreen() * indirectModel.getMaterial().getColor().getGreen() * model.getMaterial().getColor().getGreen() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
+						blueIndirect += (((lightIntensity * (indirectLoopLamp.getColor().getBlue() * indirectModel.getMaterial().getColor().getBlue() * model.getMaterial().getColor().getBlue() / 65025) * indirectLoopLamp.getIntensity()) / lightDistance) / INDIRECT_SAMPLES);
 					}
 				}
+				red += redIndirect;
+				green += greenIndirect;
+				blue += blueIndirect;
 
 				//calculate reflections (issues with this)
 				if(REFLECTIONS && model.getMaterial().getReflectiveness() > 0) {
@@ -260,7 +272,8 @@ public class Render {
 		if(red < 0) red = 0;
 		if(green < 0) green = 0;
 		if(blue < 0) blue = 0;
-		return new Color(red, green, blue);
+		//return new Color(red, green, blue);
+		return new Color(Main.texture.getRGB((int)(currentBarycentric.getX() * Main.texture.getWidth()), (int)(currentBarycentric.getY() * Main.texture.getHeight())));
 		
 	}
 
