@@ -1,6 +1,7 @@
 package me.alejandro.raytracer.objects;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 public class Material implements Cloneable {
 
@@ -11,6 +12,7 @@ public class Material implements Cloneable {
     private double alpha;
     private double reflectiveness;
     private double gloss;
+    private BufferedImage texture;
 
     public Material() {
         this.color = new Color(0, 0, 0);
@@ -20,6 +22,8 @@ public class Material implements Cloneable {
         this.alpha = 1D;
         this.reflectiveness = 0D;
         this.gloss = 1D;
+        this.texture = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        this.texture.setRGB(0, 0, Color.WHITE.getRGB());
     }
 
     public Material(Color color, Color specularColor, double specularIntensity, int specularHardness, double alpha, double reflectiveness, double gloss) {
@@ -30,6 +34,19 @@ public class Material implements Cloneable {
         this.alpha = alpha;
         this.reflectiveness = reflectiveness;
         this.gloss = gloss;
+        this.texture = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        this.texture.setRGB(0, 0, Color.WHITE.getRGB());
+    }
+
+    public Material(Color color, Color specularColor, double specularIntensity, int specularHardness, double alpha, double reflectiveness, double gloss, BufferedImage texture) {
+        this.color = color;
+        this.specularColor = specularColor;
+        this.specularIntensity = specularIntensity;
+        this.specularHardness = specularHardness;
+        this.alpha = alpha;
+        this.reflectiveness = reflectiveness;
+        this.gloss = gloss;
+        this.texture = texture;
     }
 
     public Color getColor() {
@@ -86,6 +103,14 @@ public class Material implements Cloneable {
 
     public void setSpecularHardness(int specularHardness) {
         this.specularHardness = specularHardness;
+    }
+
+    public BufferedImage getTexture() {
+        return texture;
+    }
+
+    public void setTexture(BufferedImage texture) {
+        this.texture = texture;
     }
 
     public Material clone() {

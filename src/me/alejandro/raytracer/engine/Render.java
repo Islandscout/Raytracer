@@ -12,20 +12,22 @@ import me.alejandro.raytracer.objects.Vector;
 
 public class Render {
 
-	private final static int SSAA = 0; //recommended to disable. This increases render time by A LOT when enabled.
+	private final static int SSAA = 4; //recommended to disable. This increases render time by A LOT when enabled.
 	
 	private final static boolean DIFFUSE = true; //lambert diffuse
+	private final static boolean PHONG_INTERPOLATION = true; //smooth shading
+	private final static boolean TEXTURES = true;
 
-	private final static int INDIRECT_SAMPLES = 0;
+	private final static int INDIRECT_SAMPLES = 2;
 	
-	private final static boolean SHADOWS = false;
-	private final static boolean SHADOW_FIX = false; //fixes shadow termination artifact on smooth surfaces. May cause issues on non-closed geometry.
+	private final static boolean SHADOWS = true;
+	private final static boolean SHADOW_FIX = true; //fixes shadow termination artifact on smooth surfaces. May cause issues on non-closed geometry.
 	//private final static int SOFT_SHADOW_SAMPLES = 1;
 	
 	private final static boolean REFLECTIONS = false; //issue: wont reflect a component color if there is no direct light source for the color.
 	private final static int REFLECTION_BOUNCES = 1;
 	
-	private final static boolean PHONG_SPECULARITY = false;
+	private final static boolean PHONG_SPECULARITY = true;
 	
 	//private final static boolean DEPTH_OF_FIELD = false;
 	//private final static int DEPTH_OF_FIELD_SAMPLES = 4;
@@ -76,7 +78,7 @@ public class Render {
 							triangle = loopTriangle; //the closest triangle is now chosen
 							intersectFirst = loopIntersect; //this is where the ray intersects with the triangle
 							model = loopModel; //the model of the closest triangle is now chosen
-							barycentric = new Coordinate(currentBarycentric); //barycentric coordinates of triangle used for smooth phong shading
+							barycentric = new Coordinate(currentBarycentric); //barycentric coordinates of triangle used for smooth phong shading and texture mapping
 						}
 					}
 				}
@@ -87,17 +89,22 @@ public class Render {
 
 				//jeez...
 				//interpolate normal vector based on intersection point on triangle for smooth shading
-				Vector vertexNormal0 = new Vector(triangle.getNormal0());
-				vertexNormal0.multiply(barycentric.getZ());
-				Vector vertexNormal1 = new Vector(triangle.getNormal1());
-				vertexNormal1.multiply(barycentric.getX());
-				Vector vertexNormal2 = new Vector(triangle.getNormal2());
-				vertexNormal2.multiply(barycentric.getY());
-				Vector interpolatedNormal = vertexNormal0;
-				interpolatedNormal.add(vertexNormal1);
-				interpolatedNormal.add(vertexNormal2);
-
-				interpolatedNormal.normalize();
+				Vector interpolatedNormal;
+				if(PHONG_INTERPOLATION) {
+					Vector vertexNormal0 = new Vector(triangle.getNormal0());
+					vertexNormal0.multiply(barycentric.getZ());
+					Vector vertexNormal1 = new Vector(triangle.getNormal1());
+					vertexNormal1.multiply(barycentric.getX());
+					Vector vertexNormal2 = new Vector(triangle.getNormal2());
+					vertexNormal2.multiply(barycentric.getY());
+					interpolatedNormal = vertexNormal0;
+					interpolatedNormal.add(vertexNormal1);
+					interpolatedNormal.add(vertexNormal2);
+					interpolatedNormal.normalize();
+				}
+				else {
+					interpolatedNormal = triangle.getNormal();
+				}
 
 				//calculate direct lighting
 				Vector camera = new Vector(0 - intersectFirst.getX(), 0 - intersectFirst.getY(), 0 - intersectFirst.getZ());
@@ -191,9 +198,9 @@ public class Render {
 						}
 					}
 					if(currentIndirectBounce == null) {
-						redIndirect += (BACKGROUND_COLOR.getRed() / (double) INDIRECT_SAMPLES);
-						greenIndirect += (BACKGROUND_COLOR.getGreen() / (double) INDIRECT_SAMPLES);
-						blueIndirect += (BACKGROUND_COLOR.getBlue() / (double) INDIRECT_SAMPLES);
+						redIndirect += ((BACKGROUND_COLOR.getRed() * model.getMaterial().getColor().getRed()) / 255 / (double) INDIRECT_SAMPLES);
+						greenIndirect += ((BACKGROUND_COLOR.getGreen() * model.getMaterial().getColor().getGreen()) / 255 / (double) INDIRECT_SAMPLES);
+						blueIndirect += ((BACKGROUND_COLOR.getBlue() * model.getMaterial().getColor().getBlue()) / 255 / (double) INDIRECT_SAMPLES);
 						continue;
 					}
 					for(Lamp indirectLoopLamp : scene.lamps) {
@@ -255,6 +262,14 @@ public class Render {
 						}
 					}
 				}
+				if(TEXTURES) { //many thanks to this person: https://computergraphics.stackexchange.com/questions/1866/how-to-map-square-texture-to-triangle
+					int u = (int) (((barycentric.getZ() * triangle.getTexCoord0().getX()) + (barycentric.getX() * triangle.getTexCoord1().getX()) + (barycentric.getY() * triangle.getTexCoord2().getX())) * (model.getMaterial().getTexture().getWidth() - 1));
+					int v = (int) (((barycentric.getZ() * triangle.getTexCoord0().getY()) + (barycentric.getX() * triangle.getTexCoord1().getY()) + (barycentric.getY() * triangle.getTexCoord2().getY())) * (model.getMaterial().getTexture().getHeight() - 1));
+					Color textureColor = new Color(model.getMaterial().getTexture().getRGB(u, v));
+					red = (red * textureColor.getRed()) / 255;
+					green = (green * textureColor.getGreen()) / 255;
+					blue = (blue * textureColor.getBlue()) / 255;
+				}
 			}
 			else { //if nothing was found, fill pixel with background color
 				red += BACKGROUND_COLOR.getRed();
@@ -272,9 +287,7 @@ public class Render {
 		if(red < 0) red = 0;
 		if(green < 0) green = 0;
 		if(blue < 0) blue = 0;
-		//return new Color(red, green, blue);
-		return new Color(Main.texture.getRGB((int)(currentBarycentric.getX() * Main.texture.getWidth()), (int)(currentBarycentric.getY() * Main.texture.getHeight())));
-		
+		return new Color(red, green, blue);
 	}
 
 	//skidded from Moller Trumbore's ray-triangle-intersection algorithm

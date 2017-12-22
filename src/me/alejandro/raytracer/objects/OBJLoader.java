@@ -22,7 +22,7 @@ public class OBJLoader implements Cloneable {
         String line = reader.readLine();
         ArrayList<Triangle> triangles = new ArrayList<>();
         ArrayList<Coordinate> verticies = new ArrayList<>();
-        ArrayList<Integer> indicies = new ArrayList<>();
+        ArrayList<Coordinate> textureCoords = new ArrayList<>();
         ArrayList<Vector> normals = new ArrayList<>();
         String name = "Untitled";
 
@@ -31,32 +31,38 @@ public class OBJLoader implements Cloneable {
                 line = (reader.readLine());
                 continue;
             }
-            if(line.charAt(0) == 'v' && line.charAt(1) == 'n') {
+            if(line.charAt(0) == 'v' && line.charAt(1) == 'n') { //vertex normal
                 String[] parts = line.split(" ");
                 normals.add(new Vector(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3])));
             }
-            else if(line.charAt(0) == 'v' && line.charAt(1) == ' ') {
+            else if(line.charAt(0) == 'v' && line.charAt(1) == 't') { //texture coordinates
+                String[] parts = line.split(" ");
+                textureCoords.add(new Coordinate(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), 0));
+            }
+            else if(line.charAt(0) == 'v' && line.charAt(1) == ' ') { //vertex coordinates
                 String[] parts = line.split(" ");
                 verticies.add(new Coordinate(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3])));
             }
-            else if(line.charAt(0) == 'o' && line.charAt(1) == ' ') {
+            else if(line.charAt(0) == 'o' && line.charAt(1) == ' ') { //object name
                 name = line.substring(2);
             }
-            else if(line.charAt(0) == 'f' && line.charAt(1) == ' ') {
-                int face_verticies[] = new int[1024]; //might have to make this a bit bigger
-                int face_normals[] = new int[1024]; //may need to replace this array with an int
+            else if(line.charAt(0) == 'f' && line.charAt(1) == ' ') { //define triangle
+                int face_verticies[] = new int[3];
+                int face_normals[] = new int[3];
+                int texture_coordinates[] = new int[3];
                 String[] parts = line.split(" ");
                 for(int i = 1; i < parts.length; i ++) {
                     String[] moreParts = parts[i].split("/");
                     face_verticies[i - 1] = Integer.parseInt(moreParts[0]) - 1;
+                    if(!moreParts[1].equals("")) texture_coordinates[i - 1] = Integer.parseInt(moreParts[1]) - 1;
                     face_normals[i - 1] = Integer.parseInt(moreParts[2]) - 1;
                 }
-                triangles.add(new Triangle(verticies.get(face_verticies[0]), verticies.get(face_verticies[1]), verticies.get(face_verticies[2]), normals.get(face_normals[0]), normals.get(face_normals[1]), normals.get(face_normals[2])));
-                //triangles.add(new Triangle(verticies.get(face_verticies[0]), verticies.get(face_verticies[1]), verticies.get(face_verticies[2]), normals.get(face_normals[0])));
+                if(textureCoords.size() == 0) textureCoords.add(new Coordinate(0, 0, 0));
+                triangles.add(new Triangle(verticies.get(face_verticies[0]), verticies.get(face_verticies[1]), verticies.get(face_verticies[2]), normals.get(face_normals[0]), normals.get(face_normals[1]), normals.get(face_normals[2]), textureCoords.get(texture_coordinates[0]), textureCoords.get(texture_coordinates[1]), textureCoords.get(texture_coordinates[2])));
             }
             line = reader.readLine();
         }
-        //System.out.println(triangles.get(0).getCoord0().getX() + " " + triangles.get(0).getCoord0().getY() + " " + triangles.get(0).getCoord0().getZ());
+        //TODO: Automatically fetch texture from MTL file and apply it to material.
         model = new Model(0, 0, 0, triangles, new Material(), name);
     }
 

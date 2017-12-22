@@ -9,24 +9,27 @@ shading. If I'm going continue, I'll need to learn more about vector cross produ
 about SSAA not removing hidden geometry. Finally, I was able to implement an experimental reflection and specular
 algorithm as well.
 
-Nov. 12 2017:
+Nov. 12, 2017:
 I finally put the FOV variable to work and fixed the aspect ratio. I fixed an issue where rendering multiple models
 would cause the models to become transparent. Additionally, I implemented a simple Z-axis rotation method in the Model
 class. I need to work on fixing the scale and rotation because the origin is at (0, 0, 0) when it should be at
 model.getCoordinate().
 
-Nov. 21 2017:
+Nov. 21, 2017:
 I improved the specular shader.
 
-Nov. 29 2017:
+Nov. 29, 2017:
 I significantly improved the render time with a new culling algorithm.
 
-Dec. 8 2017:
+Dec. 8, 2017:
 15% performance increase! That is until I added the algorithm for smooth shading. I removed lots of cloning and
 redundant code.
 
-Dec. 10 2017:
+Dec. 10, 2017:
 I managed to fix the notorious shadow termination problem.
 
-Dec. 16 2017:
+Dec. 16, 2017:
 Added a really slow indirect lighting algorithm.
+
+Dec. 22, 2017:
+I got textures to work.

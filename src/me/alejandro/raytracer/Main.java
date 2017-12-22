@@ -35,77 +35,12 @@ public class Main {
 	
 	public static void main(String[] args) {
 
-		try {
-			texture = ImageIO.read(new File("tex.jpg"));
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-
 		final JFrame frame = new JFrame("Render");
 		final JLabel lbl = new JLabel();
 
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-		OBJLoader loaderPlane = new OBJLoader("testPlane.obj");
-		OBJLoader loaderSphere = new OBJLoader("sphere.obj");
-		OBJLoader loaderCube = new OBJLoader("cube.obj");
-		OBJLoader loaderCone = new OBJLoader("cone.obj");
-		OBJLoader loaderTeapot = new OBJLoader("teapot.obj");
-		loaderTeapot.loadModel();
-		loaderPlane.loadModel();
-		loaderSphere.loadModel();
-		loaderCube.loadModel();
-		loaderCone.loadModel();
-		Model plane = loaderPlane.getModel().clone();
-		Model sphere = loaderSphere.getModel().clone();
-		Model cube = loaderCube.getModel().clone();
-		Model cone = loaderCone.getModel().clone();
-		Model teapot = loaderTeapot.getModel().clone();
-
-		//plane.translate(new Vector(-1.5, -1, 5));
-		plane.translate(new Vector(0, 0, 15));
-		plane.getMaterial().setColor(Color.WHITE);
-		plane.getMaterial().setSpecularColor(Color.WHITE);
-		plane.getMaterial().setReflectiveness(0.3);
-		plane.getMaterial().setSpecularHardness(50);
-
-		sphere.translate(new Vector(-1.5, -1, 5));
-		sphere.getMaterial().setColor(new Color(0, 0, 50));
-		sphere.getMaterial().setSpecularColor(Color.BLUE);
-
-		cube.translate(new Vector(-1.5, -1, 5));
-		cube.getMaterial().setColor(Color.RED);
-		cube.getMaterial().setSpecularColor(Color.WHITE);
-		cube.getMaterial().setReflectiveness(0.3);
-
-		cone.translate(new Vector(-1.5, -1, 6));
-		cone.getMaterial().setColor(new Color(50, 255, 50));
-		cone.getMaterial().setSpecularColor(new Color(50, 255, 50));
-		cone.getMaterial().setReflectiveness(0.3);
-
-		teapot.translate(new Vector(-1.5, -1, 5));
-		//teapot.translate(new Vector(0, 0, 2.3));
-		teapot.getMaterial().setColor(Color.WHITE);
-		teapot.getMaterial().setSpecularHardness(200);
-		teapot.getMaterial().setSpecularColor(Color.WHITE);
-
-		//cone.rotateZ(-160);
-
-
-        Scene scene = new Scene();
-        scene.models.add(plane);
-		//scene.models.add(sphere);
-		//scene.models.add(cube);
-		//scene.models.add(cone);
-		//scene.models.add(teapot);
-
-		Lamp lamp = new Lamp(new Coordinate(3, 0, 3.2), 10D, new Color(255, 255, 200), LampType.POINT);
-		Lamp lamp1 = new Lamp(new Coordinate(-3, 0, 0), 7D, new Color(255, 255, 0), LampType.POINT);
-		scene.lamps.add(lamp);
-		scene.lamps.add(lamp1);
-
-		Render render = new Render(scene);
+		Render render = new Render(prepareScene());
 		long timeElapsed = System.currentTimeMillis();
 		for(int y = 0; y < HEIGHT; y++) {
 			for(int x = 0; x < WIDTH; x++) {
@@ -139,13 +74,71 @@ public class Main {
 		}
 		System.out.println("Complete!");
 	}
-	
+
+	private static Scene prepareScene() {
+		OBJLoader loaderPlane = new OBJLoader("plane.obj");
+		OBJLoader loaderSphere = new OBJLoader("sphere.obj");
+		OBJLoader loaderCube = new OBJLoader("cube.obj");
+		OBJLoader loaderCone = new OBJLoader("cone.obj");
+		OBJLoader loaderTeapot = new OBJLoader("teapot.obj");
+		loaderTeapot.loadModel();
+		loaderPlane.loadModel();
+		loaderSphere.loadModel();
+		loaderCube.loadModel();
+		loaderCone.loadModel();
+		Model plane = loaderPlane.getModel().clone();
+		Model sphere = loaderSphere.getModel().clone();
+		Model cube = loaderCube.getModel().clone();
+		Model cone = loaderCone.getModel().clone();
+		Model teapot = loaderTeapot.getModel().clone();
+
+		plane.translate(new Vector(-1.5, -1, 5));
+		//plane.translate(new Vector(0, 0, 5));
+		plane.getMaterial().setColor(Color.WHITE);
+		plane.getMaterial().setSpecularColor(Color.WHITE);
+		plane.getMaterial().setReflectiveness(0.3);
+		plane.getMaterial().setSpecularHardness(50);
+
+		sphere.translate(new Vector(-1.5, -1, 5));
+		sphere.getMaterial().setColor(new Color(0, 0, 50));
+		sphere.getMaterial().setSpecularColor(Color.BLUE);
+
+		cube.translate(new Vector(-1.5, -1, 5));
+		cube.getMaterial().setColor(Color.RED);
+		cube.getMaterial().setSpecularColor(Color.WHITE);
+		cube.getMaterial().setReflectiveness(0.3);
+
+		cone.translate(new Vector(-1.5, -1, 6));
+		cone.getMaterial().setColor(new Color(50, 255, 50));
+		cone.getMaterial().setSpecularColor(new Color(50, 255, 50));
+		cone.getMaterial().setReflectiveness(0.3);
+
+		teapot.translate(new Vector(-1.5, -1, 5));
+		//teapot.translate(new Vector(0, 0, 2.3));
+		teapot.getMaterial().setColor(Color.WHITE);
+		teapot.getMaterial().setSpecularHardness(200);
+		teapot.getMaterial().setSpecularColor(Color.WHITE);
+
+		Scene scene = new Scene();
+		scene.models.add(plane);
+		scene.models.add(sphere);
+		scene.models.add(cube);
+		scene.models.add(cone);
+		scene.models.add(teapot);
+
+		Lamp lamp = new Lamp(new Coordinate(3, 0, 3.2), 10D, new Color(255, 255, 200), LampType.POINT);
+		Lamp lamp1 = new Lamp(new Coordinate(-3, 0, 0), 7D, new Color(255, 255, 0), LampType.POINT);
+		scene.lamps.add(lamp);
+		scene.lamps.add(lamp1);
+
+		return scene;
+	}
+
 	private static double imgToCartesianX(double x) {
 		return FOV_MULTIPLIER * ((x / (WIDTH - (WIDTH / 2))) - 1);
 	}
-	
+
 	private static double imgToCartesianY(double y) {
 		return ASPECT_RATIO * FOV_MULTIPLIER * (((y / (HEIGHT - (HEIGHT / 2))) - 1) * -1);
 	}
-
 }

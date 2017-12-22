@@ -6,12 +6,15 @@ public class Triangle implements Cloneable {
 	private Coordinate coord1;
 	private Coordinate coord2;
 	private Coordinate middle;
+	private Coordinate texCoord0;
+	private Coordinate texCoord1;
+	private Coordinate texCoord2;
 	private Vector normal;
 	private Vector normal0;
 	private Vector normal1;
 	private Vector normal2;
 
-	public Triangle(Coordinate coord0, Coordinate coord1, Coordinate coord2, Vector normal0, Vector normal1, Vector normal2) {
+	public Triangle(Coordinate coord0, Coordinate coord1, Coordinate coord2, Vector normal0, Vector normal1, Vector normal2, Coordinate texCoord0, Coordinate texCoord1, Coordinate texCoord2) {
 		this.coord0 = coord0.clone();
 		this.coord1 = coord1.clone();
 		this.coord2 = coord2.clone();
@@ -29,6 +32,10 @@ public class Triangle implements Cloneable {
 		this.normal.add(this.normal1);
 		this.normal.add(this.normal2);
 		this.normal.normalize();
+
+		this.texCoord0 = texCoord0;
+		this.texCoord1 = texCoord1;
+		this.texCoord2 = texCoord2;
 	}
 
 	public Coordinate getCoord0() {
@@ -77,6 +84,18 @@ public class Triangle implements Cloneable {
 
 	public void setMiddle(Coordinate middle) {
 		this.middle = middle;
+	}
+
+	public Coordinate getTexCoord0() {
+		return texCoord0;
+	}
+
+	public Coordinate getTexCoord1() {
+		return texCoord1;
+	}
+
+	public Coordinate getTexCoord2() {
+		return texCoord2;
 	}
 
 	public Triangle clone() {
