@@ -13,9 +13,13 @@ public class OBJLoader implements Cloneable {
     private Model model;
 
     public OBJLoader(String fileName) {
-        String path = getClass().getClassLoader().getResource("me/alejandro/raytracer/res/" + fileName).toString();
-        path = path.substring(6); //there really needs to be a better way of doing this
+        String path = "resources/" + fileName;
         reader = new EasyReader(path); //might as well use EasyReader. I am not going to make my own file reader.
+        if (reader.bad())
+        {
+            System.err.println("Can't open \"" + path + "\"");
+            System.exit(1);
+        }
     }
 
     public void loadModel() {
@@ -64,6 +68,7 @@ public class OBJLoader implements Cloneable {
         }
         //TODO: Automatically fetch texture from MTL file and apply it to material.
         model = new Model(0, 0, 0, triangles, new Material(), name);
+        System.out.println("Loaded " + name + ", containing " + verticies.size() + " vertices and " + triangles.size() + " triangles.");
     }
 
     public OBJLoader clone() {

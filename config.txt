@@ -1,0 +1,19 @@
+This file is currently not in use; none of these settings will affect renders.
+
+#Camera settings
+WIDTH = 900
+HEIGHT = 600
+FOV = 90
+
+#Render settings
+SSAA = 0
+LAMBERT_DIFFUSE = true
+PHONG_INTERPOLATION = false
+PHONG_SPECULARITY = false
+TEXTURES = false
+INDIRECT_SAMPLES = 0
+SHADOWS = false
+SHADOW_FIX = true
+SOFT_SHADOW_SAMPLES = 1
+REFLECTIONS = true
+REFLECTION_BOUNCES = 1

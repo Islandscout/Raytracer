@@ -41,6 +41,7 @@ public class Main {
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
 		Render render = new Render(prepareScene());
+		System.out.println("Commencing render...");
 		long timeElapsed = System.currentTimeMillis();
 		for(int y = 0; y < HEIGHT; y++) {
 			for(int x = 0; x < WIDTH; x++) {
@@ -113,8 +114,7 @@ public class Main {
 		cone.getMaterial().setSpecularColor(new Color(50, 255, 50));
 		cone.getMaterial().setReflectiveness(0.3);
 
-		teapot.translate(new Vector(-1.5, -1, 5));
-		//teapot.translate(new Vector(0, 0, 2.3));
+		teapot.translate(new Vector(-1.3, -1, 5));
 		teapot.getMaterial().setColor(Color.WHITE);
 		teapot.getMaterial().setSpecularHardness(200);
 		teapot.getMaterial().setSpecularColor(Color.WHITE);
