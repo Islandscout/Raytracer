@@ -1,6 +1,8 @@
 package me.alejandro.raytracer.engine;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import me.alejandro.raytracer.Main;
@@ -10,8 +12,12 @@ import me.alejandro.raytracer.objects.AABB;
 import me.alejandro.raytracer.objects.Coordinate;
 import me.alejandro.raytracer.objects.Triangle;
 import me.alejandro.raytracer.objects.Vector;
+import me.alejandro.raytracer.objects.kdtree.Tree;
+import me.alejandro.raytracer.utils.Debug;
 
 public class Render {
+
+    //TODO: Clean up this mess!
 
     private final static int SSAA = 4; //recommended to disable. This increases render time by A LOT when enabled.
 
@@ -23,18 +29,16 @@ public class Render {
 
     private final static boolean SHADOWS = true;
     private final static boolean SHADOW_FIX = true; //fixes shadow termination artifact on smooth surfaces. May cause issues on non-closed geometry.
-    //private final static int SOFT_SHADOW_SAMPLES = 1;
+    //private final static int SOFT_SHADOW = false;
 
-    private final static boolean REFLECTIONS = false; //issue: wont reflect a component color if there is no direct light source for the color.
+    private final static boolean REFLECTIONS = true; //issue: wont reflect a component color if there is no direct light source for the color.
     private final static int REFLECTION_BOUNCES = 1;
 
     private final static boolean PHONG_SPECULARITY = true;
 
-    //private final static boolean DEPTH_OF_FIELD = false;
-    //private final static int DEPTH_OF_FIELD_SAMPLES = 4;
-    //private final static double DEPTH_OF_FIELD_SIZE = 0.1;
-
-    //private final static boolean RANDOM_SAMPLE_SPREAD = false;
+    private final static boolean DEPTH_OF_FIELD = true;
+    private final static double DEPTH_OF_FIELD_SIZE = 0.05;
+    private final static double DEPTH_OF_FIELD_FOCUS_DISTANCE = 2D;
 
     private final static Color BACKGROUND_COLOR = new Color(50, 50, 50);
 
@@ -48,31 +52,53 @@ public class Render {
     }
 
     public Color getColor(double x, double y) {
-
-        Vector ray = new Vector(x, y, 1); //make a ray that shoots from the camera
         int red = 0;
         int green = 0;
         int blue = 0;
         for(int i = 0; i < SSAA || i == 0; i++) {
 
+            Vector ray; //make a ray that shoots from the camera
             if(SSAA != 0) ray = new Vector(x + random.nextDouble() / (Main.WIDTH / 2), y + random.nextDouble() / (Main.HEIGHT / 2), 1);
+            else ray = new Vector(x, y, 1);
+
+            double offsetX;
+            double offsetY;
+            if(DEPTH_OF_FIELD) {
+                offsetX = (random.nextDouble() - 0.5) * DEPTH_OF_FIELD_SIZE * 2;
+                offsetY = (random.nextDouble() - 0.5) * DEPTH_OF_FIELD_SIZE * 2;
+                ray.setX(-offsetX/DEPTH_OF_FIELD_FOCUS_DISTANCE + ray.getX());
+                ray.setY(-offsetY/DEPTH_OF_FIELD_FOCUS_DISTANCE + ray.getY());
+            }
+
             Triangle triangle = null;
             Coordinate intersectFirst = null;
             Coordinate barycentric = null;
             Model model = null;
 
             //choose closest triangle in pixel
+            //start by looping through every model
             double intersectDistance = Double.MAX_VALUE;
             for(Model loopModel : scene.models) {
 
-                //ignore objects with a bounding box that is not intersected by camera ray. This saves a LOT of render time.
-                if(!cameraRayInBoundsOfModel(ray, loopModel)) {
-                    //red += 50; //debugging
-                    continue;
+                //for this model, load triangles based on whether the acceleration tree is enabled or not
+                List<Triangle> triangles;
+                if(Main.RAYTREE_SIZE > 0) { //much, much faster renders. gotta go fast
+                    triangles = new ArrayList<>();
+                    if(DEPTH_OF_FIELD) loopModel.getTree().reconstruct(ray, new Coordinate(offsetX, offsetY, 0), triangles);
+                    else loopModel.getTree().reconstructFromCamRay(ray, triangles);
+                }
+                else {
+                    //slower, but not incredibly slow
+                    //ignore objects with a bounding box that is not intersected by camera ray. This saves a LOT of render time.
+                    if(DEPTH_OF_FIELD ? !rayIntersectsAABB(loopModel.getAabb(), new Coordinate(offsetX, offsetY, 0), ray) : !cameraRayIntersectsAABB(loopModel.getAabb(), ray)) {
+                        //red += 50; //debugging
+                        continue;
+                    }
                 }
 
-                for (Triangle loopTriangle : loopModel.triangles) {
-                    Coordinate loopIntersect = rayIntersectsTriangle(cameraPosition, ray, loopTriangle); //check intersection
+                //now, loop through every triangle loaded into list
+                for (Triangle loopTriangle : Main.RAYTREE_SIZE > 0 ? triangles : loopModel.triangles) {
+                    Coordinate loopIntersect = DEPTH_OF_FIELD ? rayIntersectsTriangle(new Coordinate(offsetX, offsetY, 0).toVector(), ray, loopTriangle) : rayIntersectsTriangle(cameraPosition, ray, loopTriangle); //check intersection
                     if (loopIntersect != null) {
                         if (loopIntersect.getZ() < intersectDistance) { //Z testing
                             intersectDistance = loopIntersect.getZ();
@@ -121,11 +147,19 @@ public class Render {
                     if(SHADOWS) {
                         //for(int i1 = 0; i1 < SOFT_SHADOW_SAMPLES; i1++) {
                         for(Model loopModel : scene.models) {
-                            if(!rayIntersectsAABB(loopModel.getAabb(), intersectFirst, lampVectorNotNormalized)) {
-                                //red += 50; //debug
-                                continue;
+
+                            List<Triangle> triangles;
+                            if(Main.RAYTREE_SIZE > 0) {
+                                triangles = new ArrayList<>();
+                                loopModel.getTree().reconstruct(lampVectorNotNormalized, intersectFirst, triangles);
                             }
-                            for(Triangle loopTriangle : loopModel.triangles) {
+                            else {
+                                if(!rayIntersectsAABB(loopModel.getAabb(), intersectFirst, lampVectorNotNormalized)) {
+                                    //red += 50; //debug
+                                    continue;
+                                }
+                            }
+                            for(Triangle loopTriangle : Main.RAYTREE_SIZE > 0 ? triangles : loopModel.triangles) {
                                 Coordinate intersectLightPath = rayIntersectsTriangle(intersectFirst.toVector(), lampVectorNotNormalized, loopTriangle);
                                 if(intersectLightPath != null && intersectFirst.distanceSquared(loopLamp.getCoordinate()) > intersectLightPath.distanceSquared(loopLamp.getCoordinate())) {
                                     if(SHADOW_FIX){
@@ -152,9 +186,9 @@ public class Render {
                         double lightIntensity = Math.cos(interpolatedNormal.angleRadians(lampVectorNotNormalized));
                         if(lightIntensity < 0) continue;
                         double lightDistance = Math.pow(lampVectorNotNormalized.length(), 2) + 1; //power of 2 because we must follow inverse square law
-                        red += (int) ((lightIntensity * (loopLamp.getColor().getRed() * model.getMaterial().getColor().getRed() / 255) * loopLamp.getIntensity()) / lightDistance);
-                        green += (int) ((lightIntensity * (loopLamp.getColor().getGreen() * model.getMaterial().getColor().getGreen() / 255) * loopLamp.getIntensity()) / lightDistance);
-                        blue += (int) ((lightIntensity * (loopLamp.getColor().getBlue() * model.getMaterial().getColor().getBlue() / 255) * loopLamp.getIntensity()) / lightDistance);
+                        red += (int) ((1 - model.getMaterial().getReflectiveness()) * (lightIntensity * (loopLamp.getColor().getRed() * model.getMaterial().getColor().getRed() / 255) * loopLamp.getIntensity()) / lightDistance);
+                        green += (int) ((1 - model.getMaterial().getReflectiveness()) * (lightIntensity * (loopLamp.getColor().getGreen() * model.getMaterial().getColor().getGreen() / 255) * loopLamp.getIntensity()) / lightDistance);
+                        blue += (int) ((1 - model.getMaterial().getReflectiveness()) * (lightIntensity * (loopLamp.getColor().getBlue() * model.getMaterial().getColor().getBlue() / 255) * loopLamp.getIntensity()) / lightDistance);
                     }
 
                     //calculate specularity
@@ -192,11 +226,20 @@ public class Render {
                     Triangle indirectTriangle = null;
                     Model indirectModel = null;
                     for(Model loopModel : scene.models) {
-                        if(!rayIntersectsAABB(loopModel.getAabb(), intersectFirst, indirectVector)) {
-                            //red += 50; //debug
-                            continue;
+
+                        List<Triangle> triangles;
+                        if(Main.RAYTREE_SIZE > 0) {
+                            triangles = new ArrayList<>();
+                            loopModel.getTree().reconstruct(indirectVector, intersectFirst, triangles);
                         }
-                        for(Triangle loopTriangle : loopModel.triangles) {
+                        else {
+                            if(!rayIntersectsAABB(loopModel.getAabb(), intersectFirst, indirectVector)) {
+                                //red += 50; //debug
+                                continue;
+                            }
+                        }
+
+                        for(Triangle loopTriangle : Main.RAYTREE_SIZE > 0 ? triangles : loopModel.triangles) {
                             Coordinate intersectRayPath = rayIntersectsTriangle(intersectFirst.toVector(), indirectVector, loopTriangle);
                             if(intersectRayPath != null && intersectFirst.distanceSquared(intersectRayPath) < distanceSquared) {
                                 distanceSquared = intersectFirst.distanceSquared(intersectRayPath);
@@ -230,7 +273,7 @@ public class Render {
 
                 //calculate reflections (issues with this)
                 if(REFLECTIONS && model.getMaterial().getReflectiveness() > 0) {
-                    Coordinate currentBounce = new Coordinate(intersectFirst);
+                    Coordinate currentBounce = null;
                     for (int i1 = 0; i1 < REFLECTION_BOUNCES; i1++) {
                         Vector reflection = interpolatedNormal.clone();
                         reflection.multiply(2 * camera.dotProduct(interpolatedNormal));
@@ -238,35 +281,51 @@ public class Render {
                         double triangleDistance = Double.MAX_VALUE;
                         Triangle chosenTriangle = null;
                         Model chosenModel = null;
-                        Coordinate intersectLightPath = null;
-                        for(Model model1 : scene.models) {
-                            if(!rayIntersectsAABB(model1.getAabb(), intersectFirst, reflection)) {
-                                //red += 50; //debug
-                                continue;
+                        for(Model loopModel : scene.models) {
+
+                            List<Triangle> triangles;
+                            if(Main.RAYTREE_SIZE > 0) {
+                                triangles = new ArrayList<>();
+                                loopModel.getTree().reconstruct(reflection, intersectFirst, triangles);
                             }
-                            for (Triangle loopTriangle : model1.triangles) {
-                                intersectLightPath = rayIntersectsTriangle(currentBounce.toVector(), reflection, loopTriangle);
+                            else {
+                                if(!rayIntersectsAABB(loopModel.getAabb(), intersectFirst, reflection)) {
+                                    //red += 50; //debug
+                                    continue;
+                                }
+                            }
+
+                            for(Triangle loopTriangle : Main.RAYTREE_SIZE > 0 ? triangles : loopModel.triangles) {
+                                Coordinate intersectLightPath = rayIntersectsTriangle(intersectFirst.toVector(), reflection, loopTriangle);
                                 if (intersectLightPath != null) {
-                                    double checkDistance = intersectLightPath.distanceSquared(currentBounce);
+                                    double checkDistance = intersectLightPath.distanceSquared(intersectFirst);
                                     if(checkDistance < triangleDistance) {
                                         triangleDistance = checkDistance;
                                         chosenTriangle = loopTriangle;
-                                        chosenModel = model1;
+                                        chosenModel = loopModel;
+                                        currentBounce = intersectLightPath;
                                     }
                                     //double fresnel = Math.cos(camera.angleRadians(triangle.getNormal()));
                                 }
                             }
                         }
-                        currentBounce = intersectLightPath;
+
                         if(chosenTriangle != null) {
-                            red += (int) (chosenModel.getMaterial().getColor().getRed() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES + 1);
-                            green += (int) (chosenModel.getMaterial().getColor().getGreen() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES + 1);
-                            blue += (int) (chosenModel.getMaterial().getColor().getBlue() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES + 1);
+                            for(Lamp loopLamp : scene.lamps) {
+                                Vector toLamp = new Vector(loopLamp.getCoordinate().getX() - currentBounce.getX(), loopLamp.getCoordinate().getY() - currentBounce.getY(), loopLamp.getCoordinate().getZ() - currentBounce.getZ());
+                                double lightIntensity = Math.cos(chosenTriangle.getNormal().angleRadians(toLamp));
+                                if(lightIntensity < 0) continue;
+                                double lightDistance = Math.pow(toLamp.length(), 2) + 1;
+                                red += (int) ((lightIntensity * loopLamp.getIntensity() * (loopLamp.getColor().getRed() * chosenModel.getMaterial().getColor().getRed() * model.getMaterial().getColor().getRed() * model.getMaterial().getReflectiveness() / 65025)) / lightDistance) / (REFLECTION_BOUNCES);
+                                green += (int) ((lightIntensity * loopLamp.getIntensity() * (loopLamp.getColor().getGreen() * chosenModel.getMaterial().getColor().getGreen() * model.getMaterial().getColor().getGreen() * model.getMaterial().getReflectiveness() / 65025)) / lightDistance) / (REFLECTION_BOUNCES);
+                                blue += (int) ((lightIntensity * loopLamp.getIntensity() * (loopLamp.getColor().getBlue() * chosenModel.getMaterial().getColor().getBlue() * model.getMaterial().getColor().getBlue() * model.getMaterial().getReflectiveness() / 65025)) / lightDistance) / (REFLECTION_BOUNCES);
+                            }
+
                         }
                         else {
-                            red += (int) (BACKGROUND_COLOR.getRed() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES + 1);
-                            green += (int) (BACKGROUND_COLOR.getGreen() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES + 1);
-                            blue += (int) (BACKGROUND_COLOR.getBlue() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES + 1);
+                            red += (int) (BACKGROUND_COLOR.getRed() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES);
+                            green += (int) (BACKGROUND_COLOR.getGreen() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES);
+                            blue += (int) (BACKGROUND_COLOR.getBlue() * model.getMaterial().getReflectiveness()) / (REFLECTION_BOUNCES);
                         }
                     }
                 }
@@ -335,16 +394,12 @@ public class Render {
         Vector mini = aabb.getMinimum().toVector();
         Vector maxi = aabb.getMaximum().toVector();
 
-        double dirFracX = 1 / ray.getX();
-        double dirFracY = 1 / ray.getY();
-        double dirFracZ = 1 / ray.getZ();
-
-        double t1 = ((mini.getX() - origin.getX()) * dirFracX);
-        double t2 = ((maxi.getX() - origin.getX()) * dirFracX);
-        double t3 = ((mini.getY() - origin.getY()) * dirFracY);
-        double t4 = ((maxi.getY() - origin.getY()) * dirFracY);
-        double t5 = ((mini.getZ() - origin.getZ()) * dirFracZ);
-        double t6 = ((maxi.getZ() - origin.getZ()) * dirFracZ);
+        double t1 = ((mini.getX() - origin.getX()) / ray.getX());
+        double t2 = ((maxi.getX() - origin.getX()) / ray.getX());
+        double t3 = ((mini.getY() - origin.getY()) / ray.getY());
+        double t4 = ((maxi.getY() - origin.getY()) / ray.getY());
+        double t5 = ((mini.getZ() - origin.getZ()) / ray.getZ());
+        double t6 = ((maxi.getZ() - origin.getZ()) / ray.getZ());
 
         double tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
         double tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
@@ -361,6 +416,29 @@ public class Render {
         return true;
     }
 
+    private boolean cameraRayIntersectsAABB(AABB aabb, Vector ray) {
+        Vector mini = aabb.getMinimum().toVector();
+        Vector maxi = aabb.getMaximum().toVector();
+
+        double t1 = (mini.getX() / ray.getX());
+        double t2 = (maxi.getX() / ray.getX());
+        double t3 = (mini.getY() / ray.getY());
+        double t4 = (maxi.getY() / ray.getY());
+        double t5 = (mini.getZ() / ray.getZ());
+        double t6 = (maxi.getZ() / ray.getZ());
+
+        double tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
+        double tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
+
+        //If the ray intersects the AABB, but the AABB is behind the ray
+        if (tmax < 0) return false;
+
+        //If the ray doesn't intersect the AABB.
+        return !(tmin > tmax);
+    }
+
+    //this is a joke, lol
+    /*
     private boolean cameraRayInBoundsOfModel(Vector vec, Model model) {
         if(model.getAabb().getMaximum().getZ() <= 0 && model.getAabb().getMinimum().getZ() <= 0) return false; //you'll never see the object behind you, so why test for intersection?
         if(model.getAabb().getMinimum().getZ() <= 0) return true; //handle AABB that is at 0 or negative Z. Prevents division by zero and other logic/geometric problems.
@@ -374,4 +452,5 @@ public class Render {
         if(vec.getX() > model.getAabb().getMaximum().getX() / xDivisorMax || vec.getX() < model.getAabb().getMinimum().getX() / xDivisorMin) return false;
         return true;
     }
+    */
 }
