@@ -212,7 +212,7 @@ public class Render {
                 }
 
                 //calculate indirect lighting (very very slow)
-                //1 bounce & shadows on the indirect object do not affect bounced ray
+                //1 bounce & shadows on the indirect object do not effect bounced ray
                 double redIndirect = 0;
                 double greenIndirect = 0;
                 double blueIndirect = 0;
